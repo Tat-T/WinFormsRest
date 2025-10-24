@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -29,16 +30,16 @@ namespace WindowsAdminApp
             {
                 Left = 10,
                 Top = 50,
-                Width = 1100,
+                Width = 1150,
                 Height = 500,
                 View = View.Details,
                 FullRowSelect = true
             };
 
-            lvMenu.Columns.Add("ID", 60);
-            lvMenu.Columns.Add("Название", 250);
-            lvMenu.Columns.Add("Цена", 100);
-            lvMenu.Columns.Add("Описание", 600);
+            lvMenu.Columns.Add("Фото", 300);
+            lvMenu.Columns.Add("Название блюда", 150);
+            lvMenu.Columns.Add("Ингредиенты", 300);
+            lvMenu.Columns.Add("Цена", 80);
 
             Controls.Add(btnRefresh);
             Controls.Add(lvMenu);
@@ -64,19 +65,28 @@ namespace WindowsAdminApp
                 }
 
                 var json = await resp.Content.ReadAsStringAsync();
-                var items = JsonSerializer.Deserialize<List<MenuDto>>(json, new JsonSerializerOptions
+                var items = JsonSerializer.Deserialize<List<MenuItemDto>>(json, new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
                 });
 
                 foreach (var m in items)
                 {
-                    var item = new ListViewItem(m.Id.ToString());
-                    item.SubItems.Add(m.Name ?? "");
+                    var item = new ListViewItem(m.DishImage ?? "");
+                    item.SubItems.Add(m.DishName ?? "");
+
+                    // ingredientsText собираем из списка строк Ingredients
+                    string ingredientsText = "";
+                    if (m.Ingredients != null && m.Ingredients.Count > 0)
+                    {
+                        ingredientsText = string.Join(", ", m.Ingredients);
+                    }
+                    item.SubItems.Add(ingredientsText);
+
                     item.SubItems.Add(m.Price?.ToString("0.00") ?? "");
-                    item.SubItems.Add(m.Description ?? "");
                     lvMenu.Items.Add(item);
                 }
+
             }
             catch (Exception ex)
             {
@@ -88,12 +98,13 @@ namespace WindowsAdminApp
             }
         }
 
-        private class MenuDto
+        private class MenuItemDto
         {
-            public int Id { get; set; }
-            public string Name { get; set; }
+            public int DishID { get; set; }
+            public string? DishImage { get; set; }
+            public string DishName { get; set; } = string.Empty;
             public decimal? Price { get; set; }
-            public string Description { get; set; }
+            public List<string> Ingredients { get; set; } = new();
         }
     }
 }
