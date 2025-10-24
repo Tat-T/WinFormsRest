@@ -9,17 +9,13 @@ namespace WindowsAdminApp
 {
     public class UsersPage : UserControl
     {
-        private readonly Button btnRefresh;
-        private readonly Button btnAdd;
-        private readonly Button btnEdit;
-        private readonly Button btnDelete;
+        private readonly Button btnRefresh, btnAdd, btnEdit, btnDelete;
         private readonly ListView lvUsers;
 
         public UsersPage()
         {
             Dock = DockStyle.Fill;
 
-            // Кнопки
             btnRefresh = new Button { Text = "Обновить", Left = 10, Top = 10, Width = 100 };
             btnRefresh.Click += async (s, e) => await LoadUsers();
 
@@ -32,7 +28,6 @@ namespace WindowsAdminApp
             btnDelete = new Button { Text = "Удалить", Left = 340, Top = 10, Width = 100 };
             btnDelete.Click += async (s, e) => await DeleteUser();
 
-            // Список пользователей
             lvUsers = new ListView
             {
                 Left = 10,
@@ -43,7 +38,6 @@ namespace WindowsAdminApp
                 FullRowSelect = true
             };
 
-            // Колонки
             lvUsers.Columns.Add("ID", 40);
             lvUsers.Columns.Add("Фамилия", 100);
             lvUsers.Columns.Add("Имя", 100);
@@ -52,15 +46,11 @@ namespace WindowsAdminApp
             lvUsers.Columns.Add("Email", 130);
             lvUsers.Columns.Add("Телефон", 100);
             lvUsers.Columns.Add("Дата рождения", 100);
-            lvUsers.Columns.Add("Дата создания", 100);
-            lvUsers.Columns.Add("Роль", 50);
+            lvUsers.Columns.Add("Дата создания", 120);
+            lvUsers.Columns.Add("Роль", 80);
             lvUsers.Columns.Add("Активен", 60);
 
-            Controls.Add(btnRefresh);
-            Controls.Add(btnAdd);
-            Controls.Add(btnEdit);
-            Controls.Add(btnDelete);
-            Controls.Add(lvUsers);
+            Controls.AddRange(new Control[] { btnRefresh, btnAdd, btnEdit, btnDelete, lvUsers });
 
             _ = LoadUsers();
         }
@@ -73,17 +63,16 @@ namespace WindowsAdminApp
                 lvUsers.Items.Clear();
 
                 using var http = new HttpClient();
-                var url = AppConfig.ApiBaseUrl.TrimEnd('/') + "/api/users";
-
-                var resp = await http.GetAsync(url);
+                var resp = await http.GetAsync(AppConfig.ApiBaseUrl.TrimEnd('/') + "/api/users");
                 if (!resp.IsSuccessStatusCode)
                 {
-                    MessageBox.Show("Ошибка при получении пользователей. Код: " + resp.StatusCode);
+                    MessageBox.Show("Ошибка загрузки пользователей: " + resp.StatusCode);
                     return;
                 }
 
                 var json = await resp.Content.ReadAsStringAsync();
-                var users = JsonSerializer.Deserialize<List<UserDto>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                var users = JsonSerializer.Deserialize<List<UserDto>>(json,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
                 foreach (var u in users)
                 {

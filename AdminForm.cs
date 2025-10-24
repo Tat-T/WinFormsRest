@@ -14,12 +14,6 @@ namespace WindowsAdminApp
             Height = 650;
             StartPosition = FormStartPosition.CenterScreen;
 
-            tabControl = new TabControl
-            {
-                Dock = DockStyle.Fill
-            };
-
-            // Вкладки
             tabControl = new TabControl { Dock = DockStyle.Fill };
 
             var usersTab = new TabPage("Users");
@@ -34,7 +28,6 @@ namespace WindowsAdminApp
             tabControl.TabPages.Add(usersTab);
             tabControl.TabPages.Add(menuTab);
             tabControl.TabPages.Add(reservationsTab);
-
 
             Controls.Add(tabControl);
         }

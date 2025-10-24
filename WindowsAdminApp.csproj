@@ -107,6 +107,9 @@
     <Compile Include="ReservationsPage.cs">
       <SubType>UserControl</SubType>
     </Compile>
+    <Compile Include="UserEditForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="UsersPage.cs">
       <SubType>UserControl</SubType>
     </Compile>
