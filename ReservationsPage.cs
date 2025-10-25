@@ -9,7 +9,7 @@ namespace WindowsAdminApp
 {
     public class ReservationsPage : UserControl
     {
-        private readonly Button btnRefresh;
+        private readonly Button btnRefresh, btnAdd, btnEdit, btnDelete;
         private readonly ListView lvReservations;
 
         public ReservationsPage()
@@ -25,26 +25,53 @@ namespace WindowsAdminApp
             };
             btnRefresh.Click += async (s, e) => await LoadReservations();
 
+            btnAdd = new Button { Text = "Добавить", Left = 120, Top = 10, Width = 100 };
+            btnAdd.Click += (s, e) => AddReservations();
+
+            btnEdit = new Button { Text = "Редактировать", Left = 230, Top = 10, Width = 100 };
+            btnEdit.Click += (s, e) => EditReservations();
+
+            btnDelete = new Button { Text = "Удалить", Left = 340, Top = 10, Width = 100 };
+            btnDelete.Click += async (s, e) => await DeleteReservations();
+
             lvReservations = new ListView
             {
                 Left = 10,
                 Top = 50,
-                Width = 1100,
+                Width = 1150,
                 Height = 500,
                 View = View.Details,
                 FullRowSelect = true
             };
 
-            lvReservations.Columns.Add("ID", 60);
-            lvReservations.Columns.Add("Пользователь", 200);
-            lvReservations.Columns.Add("Дата", 200);
-            lvReservations.Columns.Add("Гостей", 80);
-            lvReservations.Columns.Add("Статус", 150);
+            lvReservations.Columns.Add("N", 40);
+            lvReservations.Columns.Add("Имя", 100);
+            lvReservations.Columns.Add("Email", 130);
+            lvReservations.Columns.Add("Телефон", 100);
+            lvReservations.Columns.Add("Дата", 120);
+            lvReservations.Columns.Add("Время", 120);
+            lvReservations.Columns.Add("Гости", 100);
+            lvReservations.Columns.Add("Сообщение", 200);
 
-            Controls.Add(btnRefresh);
+            Controls.AddRange(new Control[] { btnRefresh, btnAdd, btnEdit, btnDelete });
             Controls.Add(lvReservations);
 
             _ = LoadReservations();
+        }
+
+        private async Task DeleteReservations()
+        {
+            throw new NotImplementedException();
+        }
+
+        private void EditReservations()
+        {
+            throw new NotImplementedException();
+        }
+
+        private void AddReservations()
+        {
+            throw new NotImplementedException();
         }
 
         private async Task LoadReservations()

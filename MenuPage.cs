@@ -10,8 +10,9 @@ namespace WindowsAdminApp
 {
     public class MenuPage : UserControl
     {
-        private readonly Button btnRefresh;
+        private readonly Button btnRefresh, btnAdd, btnEdit, btnDelete;
         private readonly ListView lvMenu;
+        private List<MenuItemDto> currentMenu = new();
 
         public MenuPage()
         {
@@ -25,6 +26,15 @@ namespace WindowsAdminApp
                 Width = 100
             };
             btnRefresh.Click += async (s, e) => await LoadMenu();
+
+            btnAdd = new Button { Text = "Добавить", Left = 120, Top = 10, Width = 100 };
+            btnAdd.Click += (s, e) => AddMenu();
+
+            btnEdit = new Button { Text = "Редактировать", Left = 230, Top = 10, Width = 100 };
+            btnEdit.Click += (s, e) => EditMenu();
+
+            btnDelete = new Button { Text = "Удалить", Left = 340, Top = 10, Width = 100 };
+            btnDelete.Click += async (s, e) => await DeleteMenu();
 
             lvMenu = new ListView
             {
@@ -41,15 +51,82 @@ namespace WindowsAdminApp
             lvMenu.Columns.Add("Ингредиенты", 300);
             lvMenu.Columns.Add("Цена", 80);
 
-            Controls.Add(btnRefresh);
+            Controls.AddRange (new Control [] { btnRefresh, btnAdd, btnEdit, btnDelete});
             Controls.Add(lvMenu);
 
             // Загружаем при открытии
             _ = LoadMenu();
         }
 
+        private async Task DeleteMenu()
+        {
+            if (lvMenu.SelectedItems.Count == 0)
+            {
+                MessageBox.Show("Выберите блюдо для удаления");
+                return;
+            }
+
+            var item = lvMenu.SelectedItems[0];
+            int index = item.Index;
+            var dish = currentMenu[index];
+
+            var confirm = MessageBox.Show($"Удалить блюдо \"{dish.DishName}\"?", "Подтверждение", MessageBoxButtons.YesNo);
+            if (confirm != DialogResult.Yes) return;
+
+            using var http = new HttpClient();
+            var url = AppConfig.ApiBaseUrl.TrimEnd('/') + "/api/menu/" + dish.DishID;
+
+            var resp = await http.DeleteAsync(url);
+            if (resp.IsSuccessStatusCode)
+            {
+                MessageBox.Show("Блюдо удалено");
+                await LoadMenu();
+            }
+            else
+            {
+                MessageBox.Show("Ошибка удаления: " + resp.StatusCode);
+            }
+        }
+
+        private void EditMenu()
+        {
+            if (lvMenu.SelectedItems.Count == 0)
+            {
+                MessageBox.Show("Выберите блюдо для редактирования");
+                return;
+            }
+
+            var item = lvMenu.SelectedItems[0];
+            int index = item.Index;
+            var dish = currentMenu[index];
+
+            using var form = new AddEditDishForm(
+                isEdit: true,
+                dishId: dish.DishID,
+                name: dish.DishName,
+                price: dish.Price,
+                ingredients: string.Join(", ", dish.Ingredients)
+            );
+
+            if (form.ShowDialog() == DialogResult.OK)
+            {
+                _ = LoadMenu();
+            }
+
+        }
+
+        private void AddMenu()
+        {
+            using var form = new AddEditDishForm();
+            if (form.ShowDialog() == DialogResult.OK)
+            {
+                _ = LoadMenu();
+            }
+        }
+
         private async Task LoadMenu()
         {
+
             try
             {
                 btnRefresh.Enabled = false;
@@ -86,7 +163,7 @@ namespace WindowsAdminApp
                     item.SubItems.Add(m.Price?.ToString("0.00") ?? "");
                     lvMenu.Items.Add(item);
                 }
-
+                currentMenu = items ?? new List<MenuItemDto>();
             }
             catch (Exception ex)
             {
@@ -96,6 +173,8 @@ namespace WindowsAdminApp
             {
                 btnRefresh.Enabled = true;
             }
+
+
         }
 
         private class MenuItemDto
