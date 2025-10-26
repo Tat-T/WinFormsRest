@@ -105,8 +105,10 @@ namespace WindowsAdminApp
                 dishId: dish.DishID,
                 name: dish.DishName,
                 price: dish.Price,
-                ingredients: string.Join(", ", dish.Ingredients)
+                ingredients: string.Join(", ", dish.Ingredients),
+                dishImageUrl: dish.DishImage
             );
+
 
             if (form.ShowDialog() == DialogResult.OK)
             {
