@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -26,14 +27,17 @@ namespace WindowsAdminApp
             Width = 400;
             Height = 300;
             StartPosition = FormStartPosition.CenterParent;
+            FormBorderStyle = FormBorderStyle.FixedDialog;
+            MaximizeBox = false;
+            MinimizeBox = false;
 
-            Label lbl1 = new() { Text = "Название:", Left = 20, Top = 20 };
+            Label lbl1 = new() { Text = "Название:", Left = 20, Top = 20, Width = 100 };
             txtName = new() { Left = 120, Top = 20, Width = 220, Text = name ?? "" };
 
-            Label lbl2 = new() { Text = "Цена:", Left = 20, Top = 60 };
+            Label lbl2 = new() { Text = "Цена:", Left = 20, Top = 60, Width = 100 };
             txtPrice = new() { Left = 120, Top = 60, Width = 100, Text = price?.ToString("0.00") ?? "" };
 
-            Label lbl3 = new() { Text = "Ингредиенты (через запятую):", Left = 20, Top = 100 };
+            Label lbl3 = new() { Text = "Ингредиенты (через запятую):", Left = 20, Top = 100, Width = 250 };
             txtIngredients = new() { Left = 20, Top = 120, Width = 320, Height = 60, Multiline = true, Text = ingredients ?? "" };
 
             btnSave = new() { Text = "Сохранить", Left = 80, Top = 200, Width = 100 };
@@ -53,42 +57,57 @@ namespace WindowsAdminApp
                 return;
             }
 
-            if (!decimal.TryParse(txtPrice.Text, out var price))
+            if (!decimal.TryParse(txtPrice.Text, NumberStyles.Any, CultureInfo.CurrentCulture, out var price) &&
+    !            decimal.TryParse(txtPrice.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out price))
             {
-                MessageBox.Show("Некорректная цена");
+                MessageBox.Show("Некорректная цена (пример: 150,00 или 150.00)");
                 return;
             }
 
+            string name = txtName.Text.Trim();
+            string ingredients = txtIngredients.Text.Trim();
+
             using var http = new HttpClient();
-            var url = AppConfig.ApiBaseUrl.TrimEnd('/') + "/api/menu";
+
+            // Формируем данные
+            var priceText = price.ToString(CultureInfo.CurrentCulture);
 
             var form = new MultipartFormDataContent
             {
                 { new StringContent(txtName.Text), "DishName" },
-                { new StringContent(price.ToString().Replace(',', '.')), "Price" },
+                { new StringContent(priceText), "Price" },
                 { new StringContent(txtIngredients.Text), "IngredientNames" }
             };
 
             HttpResponseMessage resp;
+            string url = AppConfig.ApiBaseUrl.TrimEnd('/') + "/api/menu";
 
-            if (isEdit && dishId.HasValue)
+            try
             {
-                resp = await http.PutAsync(url + "/" + dishId, form);
-            }
-            else
-            {
-                resp = await http.PostAsync(url, form);
-            }
+                if (isEdit && dishId.HasValue)
+                {
+                    resp = await http.PutAsync($"{url}/{dishId.Value}", form);
+                }
+                else
+                {
+                    resp = await http.PostAsync(url, form);
+                }
 
-            if (resp.IsSuccessStatusCode)
-            {
-                MessageBox.Show(isEdit ? "Блюдо обновлено" : "Блюдо добавлено");
-                DialogResult = DialogResult.OK;
-                Close();
+                if (resp.IsSuccessStatusCode)
+                {
+                    MessageBox.Show(isEdit ? "Блюдо успешно обновлено" : "Блюдо успешно добавлено");
+                    DialogResult = DialogResult.OK;
+                    Close();
+                }
+                else
+                {
+                    string msg = await resp.Content.ReadAsStringAsync();
+                    MessageBox.Show($"Ошибка при сохранении: {resp.StatusCode}\n{msg}");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                MessageBox.Show("Ошибка при сохранении: " + resp.StatusCode);
+                MessageBox.Show("Ошибка подключения: " + ex.Message);
             }
         }
     }
