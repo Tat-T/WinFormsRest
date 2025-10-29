@@ -99,11 +99,16 @@ namespace WindowsAdminApp
                 foreach (var r in items)
                 {
                     var item = new ListViewItem(r.Id.ToString());
-                    item.SubItems.Add(r.UserEmail ?? "");
-                    item.SubItems.Add(r.Date?.ToString("g") ?? "");
+                    item.SubItems.Add(r.Name ?? "");
+                    item.SubItems.Add(r.Email ?? "");
+                    item.SubItems.Add(r.Phone ?? "");
+                    item.SubItems.Add(r.ReservationDate.ToShortDateString());
+                    item.SubItems.Add(r.ReservationTime.ToString(@"hh\:mm"));
                     item.SubItems.Add(r.Guests.ToString());
-                    item.SubItems.Add(r.Status ?? "");
+                    item.SubItems.Add(r.Message ?? "");
+                    //item.SubItems.Add(r.CreatedAt.ToString("g") ?? "");
                     lvReservations.Items.Add(item);
+
                 }
             }
             catch (Exception ex)
@@ -119,10 +124,14 @@ namespace WindowsAdminApp
         private class ReservationDto
         {
             public int Id { get; set; }
-            public string UserEmail { get; set; }
-            public DateTime? Date { get; set; }
+            public string Name { get; set; } = string.Empty;
+            public string Email { get; set; } = string.Empty;
+            public string Phone { get; set; } = string.Empty;
+            public DateTime ReservationDate { get; set; } = DateTime.Today;
+            public TimeSpan ReservationTime { get; set; }
             public int Guests { get; set; }
-            public string Status { get; set; }
+            public string? Message { get; set; }
+            public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         }
     }
 }
