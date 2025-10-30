@@ -61,18 +61,71 @@ namespace WindowsAdminApp
 
         private async Task DeleteReservations()
         {
-            throw new NotImplementedException();
+            if (lvReservations.SelectedItems.Count == 0)
+            {
+                MessageBox.Show("Выберите бронирование для удаления");
+                return;
+            }
+
+            var item = lvReservations.SelectedItems[0];
+            int id = int.Parse(item.SubItems[0].Text);
+
+            var confirm = MessageBox.Show("Удалить выбранное бронирование?", "Подтверждение",
+                MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+
+            if (confirm != DialogResult.Yes)
+                return;
+
+            using var http = new HttpClient();
+            var url = AppConfig.ApiBaseUrl.TrimEnd('/') + "/api/reservations/" + id;
+
+            var resp = await http.DeleteAsync(url);
+            if (resp.IsSuccessStatusCode)
+            {
+                MessageBox.Show("Бронирование удалено");
+                await LoadReservations();
+            }
+            else
+            {
+                MessageBox.Show("Ошибка удаления: " + resp.StatusCode);
+            }
         }
+
 
         private void EditReservations()
         {
-            throw new NotImplementedException();
+            if (lvReservations.SelectedItems.Count == 0)
+            {
+                MessageBox.Show("Выберите бронирование для редактирования");
+                return;
+            }
+
+            var item = lvReservations.SelectedItems[0];
+
+            using var form = new AddEditReservationForm(
+                isEdit: true,
+                reservationId: int.Parse(item.SubItems[0].Text),
+                name: item.SubItems[1].Text,
+                email: item.SubItems[2].Text,
+                phone: item.SubItems[3].Text,
+                date: DateTime.TryParse(item.SubItems[4].Text, out var date) ? date : DateTime.Today,
+                time: TimeSpan.TryParse(item.SubItems[5].Text, out var time) ? time : new TimeSpan(12, 0, 0),
+                guests: int.TryParse(item.SubItems[6].Text, out var guests) ? guests : 1,
+                message: item.SubItems[7].Text
+            );
+
+            if (form.ShowDialog() == DialogResult.OK)
+                _ = LoadReservations();
         }
+
 
         private void AddReservations()
         {
-            throw new NotImplementedException();
+            using var form = new AddEditReservationForm();
+            if (form.ShowDialog() == DialogResult.OK)
+                _ = LoadReservations();
         }
+
 
         private async Task LoadReservations()
         {
