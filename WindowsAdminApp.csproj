@@ -119,6 +119,9 @@
     <Compile Include="UsersPage.cs">
       <SubType>UserControl</SubType>
     </Compile>
+    <EmbeddedResource Include="AddEditReservationForm.resx">
+      <DependentUpon>AddEditReservationForm.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="AdminForm.resx">
       <DependentUpon>AdminForm.cs</DependentUpon>
     </EmbeddedResource>

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -17,7 +18,8 @@ namespace WindowsAdminApp
         private readonly TextBox txtEmail;
         private readonly TextBox txtPhone;
         private readonly DateTimePicker dpDate;
-        private readonly DateTimePicker tpTime;
+        //private readonly DateTimePicker tpTime;
+        private ComboBox cbTime;
         private readonly NumericUpDown numGuests;
         private readonly TextBox txtMessage;
         private readonly Button btnSave;
@@ -45,14 +47,28 @@ namespace WindowsAdminApp
             txtPhone = new() { Left = 120, Top = 100, Width = 220, Text = phone ?? "" };
 
             Label lbl4 = new() { Text = "Дата:", Left = 20, Top = 140 };
-            dpDate = new() { Left = 120, Top = 140, Width = 150, Value = date ?? DateTime.Today };
+            dpDate = new() { Left = 120, Top = 140, Width = 220, Value = date ?? DateTime.Today };
 
             Label lbl5 = new() { Text = "Время:", Left = 20, Top = 180 };
-            tpTime = new() { Left = 120, Top = 180, Width = 150, Format = DateTimePickerFormat.Time, ShowUpDown = true };
-            if (time != null) tpTime.Value = DateTime.Today.Add(time.Value);
+
+            //tpTime = new() { Left = 120, Top = 180, Width = 150, Format = DateTimePickerFormat.Time, ShowUpDown = true };
+            //if (time != null) tpTime.Value = DateTime.Today.Add(time.Value);
+
+            cbTime = new ComboBox
+            {
+                Left = 120,
+                Top = 180,
+                Width = 80,
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            dpDate.ValueChanged += async (s, e) => await LoadAvailableTimes(dpDate.Value);
+            Controls.Add(cbTime);
+            _ = LoadAvailableTimes(dpDate.Value);
+
+
 
             Label lbl6 = new() { Text = "Гостей:", Left = 20, Top = 220 };
-            numGuests = new() { Left = 120, Top = 220, Width = 100, Minimum = 1, Maximum = 50, Value = guests };
+            numGuests = new() { Left = 120, Top = 220, Width = 80, Minimum = 1, Maximum = 50, Value = guests };
 
             Label lbl7 = new() { Text = "Сообщение:", Left = 20, Top = 260 };
             txtMessage = new() { Left = 20, Top = 280, Width = 320, Height = 60, Multiline = true, Text = message ?? "" };
@@ -65,9 +81,65 @@ namespace WindowsAdminApp
 
             Controls.AddRange(new Control[] {
                 lbl1, txtName, lbl2, txtEmail, lbl3, txtPhone,
-                lbl4, dpDate, lbl5, tpTime, lbl6, numGuests,
+                lbl4, dpDate, lbl5, cbTime, lbl6, numGuests,
                 lbl7, txtMessage, btnSave, btnCancel
             });
+        }
+
+        private async Task LoadAvailableTimes(DateTime date)
+        {
+            cbTime.Items.Clear();
+
+            // Все возможные слоты, с 12:00 до 22:00
+            var allSlots = new List<TimeSpan>();
+            for (int h = 12; h <= 22; h++)
+            {
+                allSlots.Add(new TimeSpan(h, 0, 0));
+                //allSlots.Add(new TimeSpan(h, 30, 0)); добавление слотов 30 минут шаг
+            }
+
+            try
+            {
+                using var http = new HttpClient();
+                var url = AppConfig.ApiBaseUrl.TrimEnd('/') + "/api/reservations";
+                var resp = await http.GetAsync(url);
+
+                if (!resp.IsSuccessStatusCode)
+                {
+                    MessageBox.Show("Не удалось получить бронирования.");
+                    return;
+                }
+
+                var json = await resp.Content.ReadAsStringAsync();
+                var reservations = JsonSerializer.Deserialize<List<ReservationDto>>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                // Получаем все занятые слоты на выбранную дату
+                var reservedTimes = reservations!
+                    .Where(r => r.ReservationDate.Date == date.Date)
+                    .Select(r => r.ReservationTime)
+                    .ToHashSet();
+
+                // Фильтруем свободные слоты
+                var freeSlots = allSlots
+                    .Where(t => !reservedTimes.Contains(t))
+                    .OrderBy(t => t)
+                    .ToList();
+
+                foreach (var t in freeSlots)
+                    cbTime.Items.Add(t.ToString(@"hh\:mm"));
+
+                if (cbTime.Items.Count > 0)
+                    cbTime.SelectedIndex = 0;
+                else
+                    MessageBox.Show("На выбранную дату нет свободных слотов.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Ошибка загрузки времени: " + ex.Message);
+            }
         }
 
         private async Task SaveReservation()
@@ -75,6 +147,13 @@ namespace WindowsAdminApp
             if (string.IsNullOrWhiteSpace(txtName.Text))
             {
                 MessageBox.Show("Введите имя");
+                return;
+            }
+
+            var selectedDateTime = dpDate.Value.Date + dpDate.Value.TimeOfDay;
+            if (selectedDateTime < DateTime.Now)
+            {
+                MessageBox.Show("Нельзя выбрать прошлое время!");
                 return;
             }
 
@@ -88,7 +167,7 @@ namespace WindowsAdminApp
                 Email = txtEmail.Text,
                 Phone = txtPhone.Text,
                 ReservationDate = dpDate.Value.Date,
-                ReservationTime = new TimeSpan(tpTime.Value.Hour, tpTime.Value.Minute, 0),
+                ReservationTime = TimeSpan.Parse(cbTime.SelectedItem.ToString()),
                 Guests = (int)numGuests.Value,
                 Message = txtMessage.Text
             };
@@ -156,5 +235,12 @@ namespace WindowsAdminApp
             }
 
         }
+
+        private class ReservationDto
+        {
+            public DateTime ReservationDate { get; set; }
+            public TimeSpan ReservationTime { get; set; }
+        }
+
     }
 }
