@@ -60,7 +60,7 @@
 
 ## Данные для проверки:
 
-Login: Admin
+E-mail: admin@mail.ru
 
 Password: admin
 
