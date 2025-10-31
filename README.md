@@ -37,18 +37,35 @@
 
 ## Запуск и установка
 
-1. Склонируйте репозиторий:
+1. Сначала склонируйте репозиторий и запустите web-приложение (сервер):
 
    ```bash
-   git clone https://github.com/Tat-T/WinFormsRest.git
+   git clone https://github.com/Tat-T/Restaurant.git (сервер web-приложение)
 
-2. Откройте решение в Visual Studio (WindowsAdminApp.sln).
+2. Склонируйте репозиторий: 
 
-3. Восстановите NuGet-пакеты:
+   ```bash
+   git clone https://github.com/Tat-T/WinFormsRest.git (Windows Forms приложение)
+
+3. Откройте решение в Visual Studio (WindowsAdminApp.sln).
+
+4. Восстановите NuGet-пакеты:
 
    ```bash
    Tools → NuGet Package Manager → Restore Packages
 
-4. Выберите конфигурацию Debug или Release.
+5. Выберите конфигурацию Debug или Release.
 
-5. Запустите проект (F5) или соберите исполняемый файл.
+6. Запустите проект (F5) или соберите исполняемый файл.
+
+Данные для проверки:
+
+Login: Admin
+
+Password: admin
+
+### Пример API-запроса
+
+<img src="images/Screenshot_1.jpg" width="500">
+<img src="images/Screenshot_2.jpg" width="500">
+<img src="images/Screenshot_4.jpg" width="500">
